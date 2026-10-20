@@ -1,0 +1,46 @@
+{
+  "image": {
+    "class_type": "Protoface_alibaba_qwen_image_3_0_image_generate_81e4d4c03f3ecb3a",
+    "inputs": {
+      "aspect_ratio": "1:1",
+      "enable_prompt_expansion": true,
+      "generation_id": 0,
+      "prompt": "A cinematic close-up of a handcrafted ceramic cup on a wooden table, morning window light.",
+      "request_scope": "protoface-example-image-v1",
+      "resolution": "1k",
+      "seed": "Default"
+    }
+  },
+  "reuse": {
+    "class_type": "ProtofaceResultReference",
+    "inputs": {
+      "file": [
+        "image",
+        2
+      ]
+    }
+  },
+  "video": {
+    "class_type": "Protoface_minimax_minimax_h3_video_general_82d0cc345adc6c57",
+    "inputs": {
+      "aspect_ratio": "auto",
+      "audio": "Default",
+      "duration_seconds": 8,
+      "enhance_prompt": false,
+      "first_frame": "References",
+      "first_frame.value": [
+        "reuse",
+        0
+      ],
+      "generate_audio": true,
+      "generation_id": 0,
+      "last_frame": "Default",
+      "prompt": "A slow cinematic camera push toward the cup. Soft steam rises.",
+      "quality": "480p",
+      "reference": "Default",
+      "reference_video": "Default",
+      "request_scope": "protoface-example-chain-v1",
+      "style": "Default"
+    }
+  }
+}

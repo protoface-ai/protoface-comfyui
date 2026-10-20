@@ -1,0 +1,100 @@
+{
+  "id": "9899f680-7a60-4703-a709-370484114b5e",
+  "revision": 0,
+  "last_node_id": 0,
+  "last_link_id": 0,
+  "nodes": [
+    {
+      "id": "resume",
+      "type": "ProtofaceResumeRun",
+      "pos": [
+        100,
+        130
+      ],
+      "size": [
+        270,
+        158
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "run_id",
+          "name": "run_id",
+          "type": "STRING",
+          "widget": {
+            "name": "run_id"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "shape": 6,
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "localized_name": "videos",
+          "name": "videos",
+          "shape": 6,
+          "type": "VIDEO",
+          "links": null
+        },
+        {
+          "localized_name": "audio",
+          "name": "audio",
+          "shape": 6,
+          "type": "AUDIO",
+          "links": null
+        },
+        {
+          "localized_name": "text",
+          "name": "text",
+          "shape": 6,
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "localized_name": "data",
+          "name": "data",
+          "shape": 6,
+          "type": "PROTOFACE_DATA",
+          "links": null
+        },
+        {
+          "localized_name": "files",
+          "name": "files",
+          "shape": 6,
+          "type": "PROTOFACE_FILE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ProtofaceResumeRun"
+      },
+      "widgets_values": [
+        "REPLACE_WITH_YOUR_RUN_ID"
+      ],
+      "widgets_values_named": {
+        "run_id": "REPLACE_WITH_YOUR_RUN_ID"
+      }
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7520891364902506,
+      "offset": [
+        550.962962962963,
+        29.666666666666686
+      ]
+    }
+  },
+  "version": 0.4
+}

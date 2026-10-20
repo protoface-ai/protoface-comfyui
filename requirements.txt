@@ -1,0 +1,4 @@
+httpx>=0.27,<1
+jsonschema>=4.23,<5
+Pillow>=10
+av>=14

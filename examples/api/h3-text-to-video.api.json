@@ -1,0 +1,21 @@
+{
+  "generate": {
+    "class_type": "Protoface_minimax_minimax_h3_video_general_82d0cc345adc6c57",
+    "inputs": {
+      "aspect_ratio": "auto",
+      "audio": "Default",
+      "duration_seconds": 8,
+      "enhance_prompt": false,
+      "first_frame": "Default",
+      "generate_audio": true,
+      "generation_id": 0,
+      "last_frame": "Default",
+      "prompt": "A slow camera move through a misty forest at sunrise, cinematic natural light.",
+      "quality": "480p",
+      "reference": "Default",
+      "reference_video": "Default",
+      "request_scope": "protoface-example-h3-v1",
+      "style": "Default"
+    }
+  }
+}
