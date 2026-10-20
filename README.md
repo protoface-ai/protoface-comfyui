@@ -1,18 +1,24 @@
 # Protoface for ComfyUI
 
-Use Protoface's generative media catalog inside native ComfyUI workflows. One extension generates searchable model/task nodes from the public API schemas: currently **44 models and 95 tasks**, including MiniMax H3, LTX 2.5, Seedance, Kling, image editing, music and 3D generation.
+Official Protoface API nodes for ComfyUI with automatic full-catalog coverage. Generate video with **MiniMax H3, LTX 2.5 Fast, Seedance, Kling, Veo, Runway and Luma**. Generate and edit images with **FLUX, Nano Banana, GPT Image and Qwen**, and create **music, speech and 3D assets**.
 
-**Beta; Registry publication pending.** Representative image, video, audio and reference workflows have been tested against the production API. Mock coverage includes every bundled task; it does not establish every model's production quality or latency.
+One extension provides searchable model/task nodes with native media connections and controls: currently **44 models and 95 tasks**. Browse the catalog by model name or task, then connect it to your ComfyUI workflow.
 
-## Install the beta
+**Beta 0.1.0:** [Protoface on Comfy Registry](https://registry.comfy.org/nodes/protoface-nodes), package **protoface-nodes**, publisher **protoface**. Representative image, video, audio and reference workflows have been tested against the production API. Mock coverage includes every bundled task; it does not establish every model's production quality or latency.
+
+## Install
 
 Requires **ComfyUI 0.41.0 or newer** and Python 3.10 or newer. ComfyUI Desktop and local/self-managed hosted installations can load this custom-node package. Comfy Cloud does not permit arbitrary independent custom-node installation. This extension bills your Protoface account directly; it is independent of Comfy Partner Nodes and Comfy credits.
 
-1. Clone the beta branch from the ComfyUI directory (repository access is required while it is private):
+With **ComfyUI-Manager**, open **Extensions** (or **Manager**), search **Protoface**, install **protoface-nodes**, then restart ComfyUI and reload the browser. Registry version processing and Manager's search index can lag after publication; if the package is not listed yet, use the tagged Git installation below. After installation, continue with API-key setup in step 4.
+
+For a manual installation of **0.1.0**:
+
+1. Clone the release tag from the ComfyUI directory:
    ```sh
-   git clone --branch integration-release https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
+   git clone --branch v0.1.0 --depth 1 https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
    ```
-   Alternatively unpack a checked source ZIP into `ComfyUI/custom_nodes/protoface`.
+   Alternatively unpack the [0.1.0 Registry source ZIP](https://cdn.comfy.org/protoface/protoface-nodes/0.1.0/node.zip) into `ComfyUI/custom_nodes/protoface`.
 2. With **ComfyUI's Python interpreter**, install `requirements.txt`:
    ```sh
    python -m pip install -r custom_nodes/protoface/requirements.txt

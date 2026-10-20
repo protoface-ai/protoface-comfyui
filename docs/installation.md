@@ -4,16 +4,16 @@
 
 Requires ComfyUI **0.41.0 or newer** and Python **3.10 or newer**. The extension performs inference through Protoface; you do not download model weights or need a local inference GPU. ComfyUI still supplies its native media types and tensor libraries. PyAV and Pillow handle native media connections and previews.
 
-The first Registry release is pending. Until then, install the beta from the `integration-release` branch or use the full source ZIP produced by Checks. Private beta installations require repository access. A wheel named `protoface_nodes-*.whl` contains only the shared Python adapter and is not an installable ComfyUI custom-node package.
+The beta **0.1.0** release is published at [Protoface on Comfy Registry](https://registry.comfy.org/nodes/protoface-nodes), under publisher **protoface** and package ID **protoface-nodes**. In ComfyUI-Manager, open **Extensions** (or **Manager**), search **Protoface**, install **protoface-nodes**, restart ComfyUI and reload the browser. Registry version processing and Manager's separate search index can lag after publication. If the package is not listed yet, use the tagged Git installation below or the [0.1.0 Registry source ZIP](https://cdn.comfy.org/protoface/protoface-nodes/0.1.0/node.zip).
 
-Once a reviewed release is available, prefer its source ZIP or the Registry package `protoface-nodes`. Registry publishing and indexing must finish before Manager search can find the package. There is one installable extension; its model/task nodes become searchable after installation.
+There is one installable extension; its model/task nodes become searchable after installation. A wheel named `protoface_nodes-*.whl` contains only the shared Python adapter and is not an installable ComfyUI custom-node package.
 
 ### Local Linux or macOS
 
 From the ComfyUI directory, with its virtual environment activated:
 
 ```sh
-git clone --branch integration-release https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
+git clone --branch v0.1.0 --depth 1 https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
 python -m pip install -r custom_nodes/protoface/requirements.txt
 ```
 
@@ -31,7 +31,7 @@ Restart ComfyUI. Installing with a separate system Python does not install depen
 
 ### Desktop and hosted services
 
-Use the Desktop installation's managed Python environment and custom-node directory rather than a separate system interpreter. The exact Desktop installation flow still needs a manual smoke test. Once Registry publishing is verified, prefer its Manager installation path where available.
+Use the Desktop installation's managed Python environment and custom-node directory rather than a separate system interpreter. The exact Desktop installation flow still needs a manual smoke test. Prefer Manager installation where the package is listed and this path is available.
 
 A hosted service must explicitly permit independent custom nodes and operator credentials. Comfy Cloud does not permit arbitrary custom-node installation. This extension charges your Protoface account directly and does not use Comfy credits.
 

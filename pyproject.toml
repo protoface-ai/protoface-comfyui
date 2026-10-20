@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "protoface-nodes"
 version = "0.1.0"
-description = "Schema-generated Protoface media API nodes for ComfyUI"
+description = "Official Protoface API nodes for ComfyUI with automatic full-catalog coverage. Video generation with MiniMax H3, LTX 2.5 Fast, Seedance, Kling, Veo, Runway and Luma. Image generation and editing with FLUX, Nano Banana, GPT Image and Qwen. Music, speech and 3D generation."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }

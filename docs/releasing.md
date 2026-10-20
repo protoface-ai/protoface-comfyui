@@ -27,6 +27,8 @@ No inference key is needed for regular CI or release builds. The catalog candida
 
 Update `pyproject.toml` and `protoface_comfyui/__init__.py` to the same three-part semantic version. Add a non-empty entry in `CHANGELOG.md`, replace its unreleased marker with the release date, and describe changes to artist controls or saved workflow behavior. The release guard also checks that `requirements.txt` matches project dependencies.
 
+Registry publication takes the listing description from `[project].description` in the tagged `pyproject.toml`. Keep that description and the README introduction focused on supported media tasks and recognizable model names. A source edit changes the metadata sent with the next release; it does not edit an already published archive or listing by itself.
+
 For catalog changes, review the candidate or run:
 
 ```sh
