@@ -1,6 +1,8 @@
 # Protoface for ComfyUI
 
-Use Protoface's generative media catalog inside native ComfyUI workflows. One extension generates searchable model/task nodes from the public API schemas: currently **44 models and 95 tasks**, including MiniMax H3, LTX 2.5, Seedance, Kling, image editing, music and 3D generation.
+Official Protoface API nodes for ComfyUI with automatic full-catalog coverage. Generate video with **MiniMax H3, LTX 2.5 Fast, Seedance, Kling, Veo, Runway and Luma**. Generate and edit images with **FLUX, Nano Banana, GPT Image and Qwen**, and create **music, speech and 3D assets**.
+
+One extension provides searchable model/task nodes with native media connections and controls: currently **44 models and 95 tasks**. Browse the catalog by model name or task, then connect it to your ComfyUI workflow.
 
 **Beta 0.1.0:** [Protoface on Comfy Registry](https://registry.comfy.org/nodes/protoface-nodes), package **protoface-nodes**, publisher **protoface**. Representative image, video, audio and reference workflows have been tested against the production API. Mock coverage includes every bundled task; it does not establish every model's production quality or latency.
 
