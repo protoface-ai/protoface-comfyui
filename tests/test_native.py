@@ -181,6 +181,96 @@ async def test_recorded_media_job_resumes_without_rechecking_or_reuploading_inpu
     assert sum(r.url.path.startswith("/v1/run/") for r in requests) == 1
 
 
+async def test_same_type_nodes_keep_distinct_paid_intents_across_concurrent_media_encoding(
+    config, journal, monkeypatch
+):
+    import threading
+
+    import torch
+
+    import protoface_comfyui.nodes as adapter_nodes
+
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        path = request.url.path
+        if path == "/v1/assets":
+            return httpx.Response(201, json={"id": "asset_input"})
+        if path.startswith("/v1/assets/"):
+            return httpx.Response(200, json={"id": "asset_input", "status": "ready", "modality": "image"})
+        if path.startswith("/v1/run/"):
+            count = sum(r.url.path.startswith("/v1/run/") for r in requests)
+            return httpx.Response(202, json={"id": f"run_{count}"})
+        if path.startswith("/v1/runs/"):
+            return httpx.Response(200, json={"id": path.split("/")[3], "status": "completed", "outputs": []})
+        return httpx.Response(404)
+
+    client = Client(config, journal, transport=httpx.MockTransport(handler))
+    op = next(
+        o
+        for o in Catalog(config.state_dir).operations
+        if o.model["id"] == "alibaba/qwen-image-3.0" and o.name == "image.edit"
+    )
+    node = Generator(client).node(op)
+
+    class SourceImage(io.ComfyNode):
+        @classmethod
+        def define_schema(cls):
+            return io.Schema(node_id="TestConcurrentSourceImage", inputs=[], outputs=[io.Image.Output()])
+
+        @classmethod
+        def execute(cls):
+            return io.NodeOutput(torch.zeros(1, 16, 16, 3))
+
+    barrier = threading.Barrier(2, timeout=5)
+    original_encode = adapter_nodes.encode_media
+
+    def overlapping_encode(*args):
+        barrier.wait()  # Both same-type executions yield before computing paid intent.
+        return original_encode(*args)
+
+    monkeypatch.setattr(adapter_nodes, "encode_media", overlapping_encode)
+    monkeypatch.setitem(comfy_nodes.NODE_CLASS_MAPPINGS, op.node_id, node)
+    monkeypatch.setitem(comfy_nodes.NODE_CLASS_MAPPINGS, "TestConcurrentSourceImage", SourceImage)
+    inputs = defaults(node.define_schema().inputs)
+    inputs["images"] = "Image"
+    inputs["images.items.item_0"] = ["source", 0]
+    # Deliberately share request_scope to make the Comfy execution IDs decisive.
+    prompt = {
+        "source": {"class_type": "TestConcurrentSourceImage", "inputs": {}},
+        "first": {"class_type": op.node_id, "inputs": dict(inputs)},
+        "second": {"class_type": op.node_id, "inputs": dict(inputs)},
+    }
+    valid, _, outputs, errors = await execution.validate_prompt("concurrent-intents", prompt, None)
+    assert valid, errors
+    executor = execution.PromptExecutor(
+        SimpleNamespace(client_id=None, send_sync=Mock()),
+        cache_type=execution.CacheType.NONE,
+        cache_args={"ram": 0, "ram_inactive": 0},
+    )
+    for prompt_id in ("first-concurrent", "retry-concurrent"):
+        await executor.execute_async(prompt, prompt_id, execute_outputs=outputs)
+        assert executor.success, executor.status_messages
+        submissions = [r for r in requests if r.url.path.startswith("/v1/run/")]
+        assert len(submissions) == 2
+        assert len({r.headers["Idempotency-Key"] for r in submissions}) == 2
+
+
+def test_invalid_cached_display_metadata_does_not_break_extension_startup(config, monkeypatch):
+    from protoface_comfyui.catalog import BUNDLE
+    from protoface_comfyui.config import Config
+
+    bad = json.loads(BUNDLE.read_text())
+    del bad["models"][0]["display_name"]
+    (config.state_dir / "catalog.json").write_text(json.dumps(bad))
+    monkeypatch.setattr(Config, "from_env", classmethod(lambda cls: config))
+    extension = Extension()
+    assert extension.catalog.cache_error
+    for node in extension.nodes:
+        node.define_schema().validate()
+
+
 async def test_nested_helper_connections_validate_in_real_comfy(config, journal, monkeypatch):
     extension = Extension()
     for node in extension.nodes:

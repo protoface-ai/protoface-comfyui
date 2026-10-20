@@ -60,6 +60,60 @@ def test_corrupt_cache_uses_bundle(tmp_path):
     assert Catalog(tmp_path).cache_error is None
 
 
+@pytest.mark.parametrize("field", ["id", "display_name", "family", "owner"])
+def test_refresh_rejects_missing_renderer_metadata_without_replacing_cache(tmp_path, field):
+    catalog = Catalog(tmp_path)
+    original = json.loads(BUNDLE.read_text())
+    catalog.save_refresh(original)
+    current = tmp_path / "catalog.json"
+    saved = current.read_bytes()
+    fresh = copy.deepcopy(original)
+    del fresh["models"][0][field]
+    with pytest.raises(ValueError, match=field):
+        catalog.save_refresh(fresh)
+    assert current.read_bytes() == saved
+    assert Catalog(tmp_path).cache_error is None
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("display_name", " "),
+        ("family", []),
+        ("owner", None),
+        ("description", None),
+        ("aliases", "alias"),
+        ("tags", [None]),
+        ("available", "yes"),
+    ],
+)
+def test_refresh_rejects_malformed_renderer_metadata(tmp_path, field, value):
+    catalog = Catalog(tmp_path)
+    fresh = json.loads(BUNDLE.read_text())
+    fresh["models"][0][field] = value
+    with pytest.raises(ValueError):
+        catalog.save_refresh(fresh)
+    assert not (tmp_path / "catalog.json").exists()
+
+
+@pytest.mark.parametrize("broken", ["metadata", "schema", "root"])
+def test_invalid_cached_contract_falls_back_before_node_generation(tmp_path, broken):
+    value = json.loads(BUNDLE.read_text())
+    if broken == "metadata":
+        del value["models"][0]["display_name"]
+    elif broken == "schema":
+        schema = next(iter(value["models"][0]["request_schemas"].values()))
+        schema["type"] = "invalid-schema-type"
+    else:
+        value = []
+    (tmp_path / "catalog.json").write_text(json.dumps(value))
+    catalog = Catalog(tmp_path)
+    assert catalog.cache_error
+    assert {op.model["id"] for op in catalog.operations if not op.retired} == {
+        model["id"] for model in json.loads(BUNDLE.read_text())["models"]
+    }
+
+
 def test_availability_changes_preserve_current_node_identity(tmp_path):
     catalog = Catalog(tmp_path)
     fresh = json.loads(BUNDLE.read_text())

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, SchemaError
 from referencing import Registry
 
 BUNDLE = Path(__file__).parent / "data" / "catalog.json"
@@ -75,6 +75,8 @@ def nullable(schema: dict) -> bool:
 
 
 def check_field(schema: dict, path: str) -> None:
+    if not isinstance(schema, dict):
+        raise ValueError(f"{path}: a representable input schema is required")
     schema = ui_schema(schema)
     if "$ref" in schema:
         raise ValueError(f"{path}: unresolved reference; publish a resolved catalog schema")
@@ -129,20 +131,43 @@ class Operation:
 
 
 def parse_catalog(value: dict, *, retired: bool = False) -> list[Operation]:
+    if not isinstance(value, dict):
+        raise ValueError("Catalog must be a JSON object")
     models = value.get("models", value.get("data"))
     if not isinstance(models, list) or not models:
         raise ValueError("Catalog must contain models and their public request_schemas")
     operations = []
     ids = set()
     for model in models:
+        if not isinstance(model, dict):
+            raise ValueError("Catalog model must be a JSON object")
+        for field in ("id", "display_name", "family", "owner"):
+            if not isinstance(model.get(field), str) or not model[field].strip():
+                raise ValueError(f"Catalog model requires a non-empty {field} string")
+        if "description" in model and not isinstance(model["description"], str):
+            raise ValueError("Catalog model description must be a string")
+        for field in ("aliases", "tags"):
+            if field in model and (
+                not isinstance(model[field], list) or any(not isinstance(item, str) for item in model[field])
+            ):
+                raise ValueError(f"Catalog model {field} must be a list of strings")
+        if "available" in model and not isinstance(model["available"], bool):
+            raise ValueError("Catalog model availability must be a boolean")
         if model["id"] in ids:
             raise ValueError(f"Duplicate model {model['id']}")
         ids.add(model["id"])
         schemas = model.get("request_schemas", {})
+        if not isinstance(schemas, dict) or not isinstance(model.get("operations"), dict):
+            raise ValueError(f"Catalog model {model['id']} requires schema and operation mappings")
         if set(schemas) != set(model["operations"]):
             raise ValueError(f"Incomplete schemas for {model['id']}")
         for name, schema in schemas.items():
-            Draft202012Validator.check_schema(schema)
+            if not isinstance(schema, dict) or not isinstance(schema.get("properties"), dict):
+                raise ValueError(f"{model['id']}/{name}: a request schema with properties is required")
+            try:
+                Draft202012Validator.check_schema(schema)
+            except SchemaError:
+                raise ValueError(f"{model['id']}/{name}: invalid public request schema") from None
             for rule in schema.get("x-protoface-constraints", []):
                 if rule.get("kind") not in {"length_equals", "sum_equals", "sum_maximum"}:
                     raise ValueError(f"{model['id']}/{name}: unsupported constraint; update the extension")
