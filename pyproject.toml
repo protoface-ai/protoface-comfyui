@@ -8,17 +8,21 @@ version = "0.1.0"
 description = "Schema-generated Protoface media API nodes for ComfyUI"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
+license = { file = "LICENSE" }
 dependencies = ["httpx>=0.27,<1", "jsonschema>=4.23,<5", "Pillow>=10", "av>=14"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8", "build>=1"]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8", "build>=1", "packaging>=24", "pathspec>=0.12,<2", "tomli>=2; python_version<'3.11'"]
 
 [project.urls]
 Repository = "https://github.com/protoface-ai/protoface-comfyui"
-Documentation = "https://docs.protoface.com"
+Documentation = "https://github.com/protoface-ai/protoface-comfyui/blob/master/docs/installation.md"
+"Bug Tracker" = "https://github.com/protoface-ai/protoface-comfyui/issues"
+Homepage = "https://protoface.com"
 
 [tool.comfy]
+# Set the registered, immutable publisher ID before the first Registry release.
+PublisherId = ""
 DisplayName = "Protoface"
 requires-comfyui = ">=0.41.0"
 
@@ -39,3 +43,4 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/generate_examples.py" = ["E402"]
+"scripts/release.py" = ["E402"]

@@ -2,13 +2,17 @@
 
 Use Protoface's generative media catalog inside native ComfyUI workflows. One extension generates searchable model/task nodes from the public API schemas: currently **44 models and 95 tasks**, including MiniMax H3, LTX 2.5, Seedance, Kling, image editing, music and 3D generation.
 
-**Local prerelease.** This source has not been published to the Comfy Registry. Representative image, video, audio and reference workflows have been tested against the production API. Mock coverage includes every bundled task; it does not establish every model's production quality or latency.
+**Beta; Registry publication pending.** Representative image, video, audio and reference workflows have been tested against the production API. Mock coverage includes every bundled task; it does not establish every model's production quality or latency.
 
-## Install locally
+## Install the beta
 
 Requires **ComfyUI 0.41.0 or newer** and Python 3.10 or newer. ComfyUI Desktop and local/self-managed hosted installations can load this custom-node package. Comfy Cloud does not permit arbitrary independent custom-node installation. This extension bills your Protoface account directly; it is independent of Comfy Partner Nodes and Comfy credits.
 
-1. Copy or symlink this folder into `ComfyUI/custom_nodes/protoface`.
+1. Clone the beta branch from the ComfyUI directory (repository access is required while it is private):
+   ```sh
+   git clone --branch integration-release https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
+   ```
+   Alternatively unpack a checked source ZIP into `ComfyUI/custom_nodes/protoface`.
 2. With **ComfyUI's Python interpreter**, install `requirements.txt`:
    ```sh
    python -m pip install -r custom_nodes/protoface/requirements.txt
@@ -59,7 +63,7 @@ Nodes keep an immutable schema identity. Old definitions remain loadable from bu
 
 New schema constructs, media modalities, or provider-specific behavior can require an extension update. Unsupported catalog refreshes are rejected before replacing the working snapshot. Publishing a model-list endpoint alone does not prove a future model is usable in ComfyUI.
 
-See [development and release checks](docs/development.md), [architecture](docs/architecture.md), and [example workflows](example_workflows/README.md).
+See [installation, updates and troubleshooting](docs/installation.md), [release and Registry setup](docs/releasing.md), [development checks](docs/development.md), [architecture](docs/architecture.md), and [example workflows](example_workflows/README.md).
 
 ## Operator limits
 

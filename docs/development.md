@@ -18,7 +18,7 @@ python scripts/check_public_content.py --archive dist/protoface_nodes-0.1.0.tar.
 
 Tests cover catalog completeness and history, native V3 schema registration, all current catalog tasks through ComfyUI's workflow engine, nested typed helpers, media roundtrips, multiple heterogeneous outputs, idempotent submission/recovery, cancellation, download auth isolation and download limits. No test calls a paid provider.
 
-Native tests use temporary input, output and preview directories so they can run against a read-only ComfyUI checkout. The prepared CI matrix checks the client/catalog on Python 3.10 and 3.13, plus Windows Python 3.12; native workflow tests target Linux and Windows Python 3.12 against pinned ComfyUI 0.41.0 and 0.42.1 releases. CI has not run on a public repository yet.
+Native tests use temporary input, output and preview directories so they can run against a read-only ComfyUI checkout. The CI matrix checks the client/catalog and release guards on Python 3.10 and 3.13, plus Windows Python 3.12; native workflow tests target Linux and Windows Python 3.12 against pinned ComfyUI 0.41.0 and 0.42.1 releases. Use the actual Actions results to establish which checks have passed.
 
 For a visual smoke test, install this folder under the checkout's `custom_nodes`, start the fixture API, and start ComfyUI with **mock credentials and a localhost API base**:
 
@@ -64,15 +64,9 @@ python /path/to/ComfyUI/main.py --cpu --listen 127.0.0.1 --port 8189 --disable-a
 
 The settings dialog shows the API endpoint. Confirm it is `https://api.protoface.com`, refresh the catalog, and validate templates before requesting a paid generation. Real provider tests require an explicit budget. Preserve generation IDs when checking caching or recovery; increment them only for an intended new generation. Keep keys, account data, live job histories and downloaded results outside the source tree.
 
-## Publishing checklist (manual, not yet performed)
+## Release preparation
 
-1. Create the public repository and register an official Comfy Registry publisher; confirm the candidate package identifier `protoface-nodes` is available and set the actual `PublisherId` in `[tool.comfy]`. The future repository URL in `pyproject.toml` is metadata, not evidence that a repository/publisher already exists. The package name is distinct from the Python SDK's distribution name; the Registry specification recommends omitting `ComfyUI` from package identifiers.
-2. Confirm the target API schema contract is deployed. With explicit approval, smoke-test representative hosted models and provider outputs. Mock coverage cannot establish upstream acceptance, costs, cancellation/refund behavior, or real model performance.
-3. Test ComfyUI Desktop, Windows portable and Linux/self-hosted setups. Confirm wheel/source contents exclude keys and local state.
-4. Finish branded listing assets and record two or three artist tutorials/workflows demonstrating a measured advantage.
-5. Tag a reviewed semver release and publish with the Registry CLI/token in a protected manual release job. Do not publish credentials or use this CI as a workaround for approval.
-
-No package or Registry publishing action is included in CI yet. Compatible catalog updates can be fetched by users without a package update; new native adapters need a code release. Registry/Manager discovery is package-level before installation, while generated node-name search is available after installation. A GitHub repository alone does not populate everyone's Add Node search or the built-in template library.
+See [the release guide](releasing.md) for the manual build/draft/Registry workflow, publisher configuration, version checks and first-release checklist. Registry publication has not been performed. Compatible catalog updates can be fetched by users without a package update; new native adapters need a code release. Registry/Manager discovery is package-level before installation, while generated node-name search is available after installation. A GitHub repository alone does not populate everyone's Add Node search or the built-in template library.
 
 ## Tested baseline and sources
 

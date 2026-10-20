@@ -5,6 +5,7 @@
 .ruff_cache/
 __pycache__/
 tests/
+scripts/
 dist/
 .local/
 *.key

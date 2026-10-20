@@ -1,0 +1,35 @@
+name: Catalog candidate
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 8 * * *'
+permissions:
+  contents: read
+jobs:
+  candidate:
+    # Enable the schedule only after the target schema contract is deployed.
+    if: github.event_name == 'workflow_dispatch' || vars.PROTOFACE_CATALOG_REFRESH_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - name: Fetch customer-safe catalog metadata
+        env:
+          PROTOFACE_API_KEY: ${{ secrets.PROTOFACE_CATALOG_API_KEY }}
+        run: python scripts/fetch_catalog.py --output /tmp/public-catalog.json
+      - name: Stage a candidate bundle and preserve old definitions
+        run: python scripts/sync_catalog.py /tmp/public-catalog.json
+      - name: Check candidate contracts and shared client behavior
+        run: pytest tests/test_catalog.py tests/test_client.py
+      - name: Check candidate for private content
+        run: python scripts/check_public_content.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: protoface-catalog-candidate
+          path: protoface_comfyui/data/
+          retention-days: 14
+      # Review the artifact and run native checks before inclusion in a code release.
+      # This workflow never commits, creates a PR, publishes a package or runs a generation.

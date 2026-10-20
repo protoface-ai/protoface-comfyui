@@ -1,0 +1,150 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Reviewed tag on master, matching pyproject.toml (for example v0.1.0)
+        type: string
+        required: true
+      create_draft:
+        description: Create a draft GitHub release with the checked source ZIP
+        type: boolean
+        default: false
+      publish_registry:
+        description: Publish the tag to the Comfy Registry (requires publisher setup)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: protoface-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '${{ inputs.tag }}'
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - name: Check exact version, tag and reviewed master ancestry
+        env:
+          RELEASE_TAG: '${{ inputs.tag }}'
+        run: python scripts/release.py check --tag "$RELEASE_TAG"
+
+  checks:
+    needs: validate
+    uses: ./.github/workflows/checks.yml
+    with:
+      ref: '${{ inputs.tag }}'
+
+  package:
+    needs: [validate, checks]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '${{ inputs.tag }}'
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]' 'comfy-cli==1.22.0'
+      - name: Build and verify full custom-node package
+        env:
+          RELEASE_TAG: '${{ inputs.tag }}'
+        run: python scripts/release.py build --tag "$RELEASE_TAG" --verify-cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: protoface-release
+          path: |
+            dist/protoface-nodes-*.zip
+            dist/SHA256SUMS
+            dist/RELEASE_NOTES.md
+          if-no-files-found: error
+          retention-days: 30
+
+  draft:
+    needs: package
+    if: inputs.create_draft
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: protoface-release
+          path: dist
+      - name: Create draft only; never overwrite an existing release
+        shell: bash
+        env:
+          GH_TOKEN: '${{ github.token }}'
+          GH_REPO: '${{ github.repository }}'
+          RELEASE_TAG: '${{ inputs.tag }}'
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "A release already exists; inspect it instead of overwriting it."
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" --verify-tag --draft \
+            --title "Protoface for ComfyUI $RELEASE_TAG" \
+            --notes-file dist/RELEASE_NOTES.md \
+            dist/protoface-nodes-*.zip dist/SHA256SUMS
+
+  registry:
+    needs: package
+    if: inputs.publish_registry
+    runs-on: ubuntu-latest
+    environment: comfy-registry
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '${{ inputs.tag }}'
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]' 'comfy-cli==1.22.0'
+      - name: Require a public repository and registered publisher metadata
+        shell: bash
+        env:
+          GH_TOKEN: '${{ github.token }}'
+          GH_REPO: '${{ github.repository }}'
+          RELEASE_TAG: '${{ inputs.tag }}'
+          PUBLISHER_ID: '${{ vars.COMFY_PUBLISHER_ID }}'
+        run: |
+          if test "$(gh api "repos/$GH_REPO" --jq .visibility)" != public; then
+            echo "Registry publishing requires a public repository. Visibility was not changed."
+            exit 1
+          fi
+          python scripts/release.py check --tag "$RELEASE_TAG" --publisher-id "$PUBLISHER_ID"
+      - name: Rebuild the same source contents before Registry upload
+        env:
+          RELEASE_TAG: '${{ inputs.tag }}'
+        run: python scripts/release.py build --tag "$RELEASE_TAG" --verify-cli
+      - uses: actions/download-artifact@v4
+        with:
+          name: protoface-release
+          path: checked-release
+      - name: Require package identity with the checked build
+        shell: bash
+        run: cmp dist/SHA256SUMS checked-release/SHA256SUMS
+      - name: Publish exactly this version (no automatic retry)
+        shell: bash
+        env:
+          REGISTRY_ACCESS_TOKEN: '${{ secrets.REGISTRY_ACCESS_TOKEN }}'
+        run: |
+          test -n "$REGISTRY_ACCESS_TOKEN"
+          comfy --skip-prompt --no-enable-telemetry env
+          comfy node publish --token "$REGISTRY_ACCESS_TOKEN" --changelog-file dist/RELEASE_NOTES.md
