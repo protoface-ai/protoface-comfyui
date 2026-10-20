@@ -128,6 +128,20 @@ def build(root: Path, output: Path, config: dict, verify_cli: bool = False) -> P
             if importlib.metadata.version("comfy-cli") != CLI_VERSION:
                 raise ValueError(f"Registry packaging verification requires comfy-cli=={CLI_VERSION}")
             from comfy_cli.file_utils import zip_files
+            from comfy_cli.registry.config_parser import extract_node_configuration
+
+            registry_config = extract_node_configuration(str(root / "pyproject.toml"))
+            if registry_config is None or (
+                registry_config.project.name != config["project"]["name"]
+                or registry_config.project.version != version
+                or registry_config.tool_comfy.publisher_id != config["tool"]["comfy"].get("PublisherId", "")
+                or registry_config.project.supported_comfyui_version
+                != config["tool"]["comfy"]["requires-comfyui"]
+                or set(registry_config.project.dependencies) != set(config["project"]["dependencies"])
+            ):
+                raise ValueError(
+                    "Registry CLI must read the same package identity, compatibility and dependencies"
+                )
 
             with tempfile.TemporaryDirectory() as temporary:
                 official = Path(temporary) / "registry.zip"

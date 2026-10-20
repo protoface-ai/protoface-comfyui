@@ -18,6 +18,7 @@ dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8", "build>=1", "packaging>
 Repository = "https://github.com/protoface-ai/protoface-comfyui"
 Documentation = "https://github.com/protoface-ai/protoface-comfyui/blob/master/docs/installation.md"
 "Bug Tracker" = "https://github.com/protoface-ai/protoface-comfyui/issues"
+Issues = "https://github.com/protoface-ai/protoface-comfyui/issues"
 Homepage = "https://protoface.com"
 
 [tool.comfy]
