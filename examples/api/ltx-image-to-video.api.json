@@ -1,0 +1,29 @@
+{
+  "generate": {
+    "class_type": "Protoface_lightricks_ltx_2_5_fast_video_general_7acfff095213feb0",
+    "inputs": {
+      "aspect_ratio": "16:9",
+      "audio_url": "Default",
+      "duration_seconds": 6,
+      "enhance_prompt": false,
+      "generate_audio": true,
+      "generation_id": 0,
+      "image_url": "Image",
+      "image_url.value": [
+        "load",
+        0
+      ],
+      "last_image_url": "Default",
+      "prompt": "A smooth camera orbit around the subject, preserving its identity.",
+      "quality": "720p",
+      "request_scope": "protoface-example-ltx-v1",
+      "seed": "Default"
+    }
+  },
+  "load": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "reference.png"
+    }
+  }
+}

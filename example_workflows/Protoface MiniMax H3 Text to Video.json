@@ -1,0 +1,97 @@
+{
+  "id": "0b2fb076-eedb-40ac-b8d4-8d28e8ed8c4f",
+  "revision": 0,
+  "last_node_id": 0,
+  "last_link_id": 0,
+  "nodes": [
+    {
+      "id": "generate",
+      "type": "Protoface_minimax_minimax_h3_video_general_82d0cc345adc6c57",
+      "pos": [
+        100,
+        130
+      ],
+      "size": [
+        400,
+        440
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "video",
+          "shape": 6,
+          "type": "VIDEO",
+          "links": null
+        },
+        {
+          "name": "files",
+          "shape": 6,
+          "type": "PROTOFACE_FILE",
+          "links": null
+        },
+        {
+          "name": "run id",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Protoface_minimax_minimax_h3_video_general_82d0cc345adc6c57",
+        "protoface_model": "minimax/minimax-h3",
+        "protoface_operation": "video.general",
+        "protoface_template_schema": "707dffcd035b355007ed72a5f69328098192b7f38b3ac97a63ae6efab661404f"
+      },
+      "widgets_values": [
+        "A slow camera move through a misty forest at sunrise, cinematic natural light.",
+        "Default",
+        "Default",
+        "Default",
+        "Default",
+        "Default",
+        "480p",
+        8,
+        "auto",
+        false,
+        true,
+        "Default",
+        0,
+        "fixed",
+        ""
+      ],
+      "widgets_values_named": {
+        "prompt": "A slow camera move through a misty forest at sunrise, cinematic natural light.",
+        "first_frame": "Default",
+        "audio": "Default",
+        "reference": "Default",
+        "reference_video": "Default",
+        "last_frame": "Default",
+        "quality": "480p",
+        "duration_seconds": 8,
+        "aspect_ratio": "auto",
+        "enhance_prompt": false,
+        "generate_audio": true,
+        "style": "Default",
+        "generation_id": 0,
+        "fixed": "fixed",
+        "request_scope": ""
+      }
+    }
+  ],
+  "links": [],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7520891364902506,
+      "offset": [
+        550.962962962963,
+        29.666666666666686
+      ]
+    },
+    "frontendVersion": "1.55.17"
+  },
+  "version": 0.4
+}

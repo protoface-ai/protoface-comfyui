@@ -1,0 +1,19 @@
+# Architecture
+
+**Package:** one independently installable Protoface extension. **Visible nodes:** one generated model/task node per public catalog operation, plus schema-generated structured item helpers and four media/recovery/file utilities. **Shared implementation:** one HTTP client, schema renderer, media boundary and SQLite request journal.
+
+`catalog.py` validates a bundled/public catalog and loads offline. Explicit refreshes validate the whole replacement before caching it; new definitions load on server restart. Node IDs combine canonical model/operation identity, the public input fingerprint and output descriptors. Snapshots preserve archived definitions. Unsupported future constructs fail clearly rather than producing deceptively incomplete controls.
+
+`nodes.py` maps primitives to native widgets, optional omission/set/null to native DynamicCombo controls, media/list inputs to native typed Autogrow sockets, and structured list items to small generated typed helper nodes. Native APIs handle widgets and graph behavior. `web/protoface.js` adds only operator credentials/catalog refresh and an invisible serialized request identity. There is no provider-specific UI implementation per model.
+
+`media.py` encodes native images as PNG, audio as PCM WAV and video as MP4/H.264, then uploads through the existing API. It retrieves the complete `outputs` list and returns native image/mask/video/audio/SVG/3D objects alongside original file artifacts. Direct asset reference chaining avoids upload/download cycles when both ends are Protoface nodes. Large video encoding currently happens in a worker thread and buffers upload bytes; streaming multipart is deferred until measured memory use warrants it.
+
+`client.py` speaks existing REST endpoints with Bearer authentication. It snapshots operator configuration for each execution, preventing an interactive key change from changing the account halfway through a job. Downloads use an unauthenticated client and bounded file streaming. API validation/billing/job execution remains authoritative.
+
+`journal.py` writes paid request intent and an idempotency key before submission. Intent combines workflow/node scope, generation ID, canonical model/schema, request values, asset content identities and credential namespace. The log stores only payload digests and minimal attribution metadata, not prompts, bearer keys or signed result URLs. Recorded run IDs resume across interruption and package-version changes. API submission retries preserve the same key/body; unresolved outcomes near the 24-hour API idempotency expiry require explicit run-ID recovery. Upload POSTs are not blindly retried.
+
+Comfy caching and the paid-job journal serve different purposes. Native caching can skip an unchanged computation. The journal prevents a duplicate paid submission even when Comfy's cache is lost. Incrementing `generation_id` or changing request values explicitly requests a new job. Two independent nodes are not merged merely because their values match.
+
+Credentials are server configuration, excluded from workflow inputs. Env/key-file setup supports headless use; the UI stores a key in memory only. A credential namespace is tied to the API key because the current API contract lacks an account-identity endpoint; key rotation changes the namespace. Use Resume Run for an existing job after rotation. There is no extension telemetry; submission metadata records integration/version/schema for server-side attribution.
+
+Initial scope includes the full current catalog. Deferred features are native Comfy Partner approval/proxy billing, Comfy Cloud installation, custom model-browsing UI, hot node registration without a restart, provider-specific editorial controls, arbitrary schema fallback JSON widgets, distributed multi-user credential isolation, batch scheduling, automatic model migration and streaming media uploads. Each should require demonstrated customer value.

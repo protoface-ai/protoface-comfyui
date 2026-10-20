@@ -1,0 +1,281 @@
+{
+  "id": "4a9f2bc2-5ea9-4b36-9958-d0e92c98b7be",
+  "revision": 0,
+  "last_node_id": 0,
+  "last_link_id": 1,
+  "nodes": [
+    {
+      "id": "generate",
+      "type": "Protoface_lightricks_ltx_2_5_fast_video_general_7acfff095213feb0",
+      "pos": [
+        482.798828125,
+        130
+      ],
+      "size": [
+        400,
+        392
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "prompt",
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "quality",
+          "name": "quality",
+          "type": "COMBO",
+          "widget": {
+            "name": "quality"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "duration seconds",
+          "name": "duration_seconds",
+          "type": "INT",
+          "widget": {
+            "name": "duration_seconds"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "aspect ratio",
+          "name": "aspect_ratio",
+          "type": "COMBO",
+          "widget": {
+            "name": "aspect_ratio"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "audio url",
+          "name": "audio_url",
+          "type": "COMFY_DYNAMICCOMBO_V3",
+          "widget": {
+            "name": "audio_url"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "enhance prompt",
+          "name": "enhance_prompt",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "enhance_prompt"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "generate audio",
+          "name": "generate_audio",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "generate_audio"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "image url",
+          "name": "image_url",
+          "type": "COMFY_DYNAMICCOMBO_V3",
+          "widget": {
+            "name": "image_url"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "value",
+          "name": "image_url.value",
+          "type": "IMAGE",
+          "link": 1
+        },
+        {
+          "localized_name": "last image url",
+          "name": "last_image_url",
+          "type": "COMFY_DYNAMICCOMBO_V3",
+          "widget": {
+            "name": "last_image_url"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "seed",
+          "name": "seed",
+          "type": "COMFY_DYNAMICCOMBO_V3",
+          "widget": {
+            "name": "seed"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "generation_id",
+          "name": "generation_id",
+          "type": "INT",
+          "widget": {
+            "name": "generation_id"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "request_scope",
+          "name": "request_scope",
+          "type": "STRING",
+          "widget": {
+            "name": "request_scope"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "video",
+          "name": "video",
+          "shape": 6,
+          "type": "VIDEO",
+          "links": null
+        },
+        {
+          "localized_name": "files",
+          "name": "files",
+          "shape": 6,
+          "type": "PROTOFACE_FILE",
+          "links": null
+        },
+        {
+          "localized_name": "run id",
+          "name": "run id",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Protoface_lightricks_ltx_2_5_fast_video_general_7acfff095213feb0",
+        "protoface_model": "lightricks/ltx-2.5-fast",
+        "protoface_operation": "video.general",
+        "protoface_template_schema": "e3171de396747617a951073fca2abc0ff39d382d2d317955540a9ff34f5cc530"
+      },
+      "widgets_values": [
+        "A smooth camera orbit around the subject, preserving its identity.",
+        "720p",
+        6,
+        "16:9",
+        "Default",
+        false,
+        true,
+        "Image",
+        "Default",
+        "Default",
+        0,
+        "fixed",
+        ""
+      ],
+      "widgets_values_named": {
+        "prompt": "A smooth camera orbit around the subject, preserving its identity.",
+        "quality": "720p",
+        "duration_seconds": 6,
+        "aspect_ratio": "16:9",
+        "audio_url": "Default",
+        "enhance_prompt": false,
+        "generate_audio": true,
+        "image_url": "Image",
+        "last_image_url": "Default",
+        "seed": "Default",
+        "generation_id": 0,
+        "fixed": "fixed",
+        "request_scope": ""
+      }
+    },
+    {
+      "id": "load",
+      "type": "LoadImage",
+      "pos": [
+        100,
+        130
+      ],
+      "size": [
+        282.798828125,
+        314
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "COMBO",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "choose file to upload",
+          "name": "upload",
+          "type": "IMAGEUPLOAD",
+          "widget": {
+            "name": "upload"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "IMAGE",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1
+          ]
+        },
+        {
+          "localized_name": "MASK",
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "reference.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "reference.png",
+        "upload": "image"
+      }
+    }
+  ],
+  "links": [
+    [
+      1,
+      "load",
+      0,
+      "generate",
+      8,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7520891364902506,
+      "offset": [
+        550.962962962963,
+        29.666666666666686
+      ]
+    }
+  },
+  "version": 0.4
+}

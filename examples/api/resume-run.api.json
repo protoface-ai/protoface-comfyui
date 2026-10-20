@@ -1,0 +1,8 @@
+{
+  "resume": {
+    "class_type": "ProtofaceResumeRun",
+    "inputs": {
+      "run_id": "REPLACE_WITH_YOUR_RUN_ID"
+    }
+  }
+}
