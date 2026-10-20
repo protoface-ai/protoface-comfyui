@@ -22,8 +22,8 @@ Issues = "https://github.com/protoface-ai/protoface-comfyui/issues"
 Homepage = "https://protoface.com"
 
 [tool.comfy]
-# Set the registered, immutable publisher ID before the first Registry release.
-PublisherId = ""
+# Registered, immutable Comfy Registry publisher identity.
+PublisherId = "protoface"
 DisplayName = "Protoface"
 requires-comfyui = ">=0.41.0"
 
