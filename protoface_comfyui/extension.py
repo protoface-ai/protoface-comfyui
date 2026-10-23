@@ -40,6 +40,7 @@ class Extension(ComfyExtension):
                     "catalog_revision": self.catalog.revision,
                     "active_nodes": sum(not op.retired for op in self.catalog.operations),
                     "cache_error": self.catalog.cache_error,
+                    "unsupported_operations": self.catalog.unsupported_operations,
                 }
             )
 

@@ -1,11 +1,12 @@
 """Exercise actual ComfyUI V3 validation/execution against a mocked Protoface API."""
 
+import copy
 import io as bytesio
 import json
 import os
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import httpx
 import pytest
@@ -93,6 +94,84 @@ def test_every_generated_node_uses_valid_public_v3_schema(config, journal):
         assert schema.is_api_node is False
         assert "api_key" not in {x.id for x in schema.inputs}
     assert len(classes) == len(catalog.operations) + len(generator.helpers)
+
+
+async def test_mixed_catalog_keeps_native_execution_and_archives_unsupported_contract(
+    config, journal, monkeypatch
+):
+    from protoface_comfyui.catalog import BUNDLE
+
+    requests = []
+    client = Client(config, journal, transport=api_transport(requests))
+    catalog = Catalog(config.state_dir)
+    fresh = json.loads(BUNDLE.read_text())
+    model = next(m for m in fresh["models"] if m["id"] == "alibaba/qwen-image-3.0")
+    model["request_schemas"]["image.edit"]["properties"]["boxes"] = {
+        "type": "array",
+        "maxItems": 1000,
+        "items": {"type": "integer"},
+    }
+    changes = catalog.save_refresh(fresh)
+    assert len(changes["unsupported_operations"]) == 1
+    refreshed = Catalog(config.state_dir)
+    generator = Generator(client)
+    classes = generator.generate(refreshed)
+    for cls in classes:
+        cls.define_schema().validate()
+    active = next(
+        o
+        for o in refreshed.operations
+        if o.model["id"] == model["id"] and o.name == "image.generate" and not o.retired
+    )
+    node = next(cls for cls in classes if cls.__name__ == active.node_id)
+    monkeypatch.setitem(comfy_nodes.NODE_CLASS_MAPPINGS, active.node_id, node)
+    prompt = {"generate": {"class_type": active.node_id, "inputs": defaults(node.define_schema().inputs)}}
+    valid, _, outputs, errors = await execution.validate_prompt("mixed", prompt, None)
+    assert valid, errors
+    server = SimpleNamespace(client_id=None, send_sync=Mock())
+    executor = execution.PromptExecutor(
+        server, cache_type=execution.CacheType.NONE, cache_args={"ram": 0, "ram_inactive": 0}
+    )
+    await executor.execute_async(prompt, "mixed", execute_outputs=outputs)
+    assert executor.success, executor.status_messages
+    assert sum(r.method == "POST" for r in requests) == 1
+    archived = next(o for o in refreshed.operations if o.model["id"] == model["id"] and o.retired)
+    old_node = next(cls for cls in classes if cls.__name__ == archived.node_id)
+    with pytest.raises(RuntimeError, match="archived"):
+        await old_node.execute(request_scope="saved-workflow")
+    assert sum(r.method == "POST" for r in requests) == 1
+
+
+async def test_operator_routes_report_skipped_operations_after_refresh_and_restart(config, monkeypatch):
+    from aiohttp import web
+    from aiohttp.test_utils import TestClient, TestServer
+    from server import PromptServer
+
+    from protoface_comfyui.catalog import BUNDLE
+
+    monkeypatch.setenv("PROTOFACE_STATE_DIR", str(config.state_dir))
+    monkeypatch.setattr(PromptServer, "instance", SimpleNamespace(routes=web.RouteTableDef()), raising=False)
+    extension = Extension()
+    fresh = copy.deepcopy(json.loads(BUNDLE.read_text()))
+    model = next(m for m in fresh["models"] if m["id"] == "alibaba/qwen-image-3.0")
+    model["request_schemas"]["image.edit"]["properties"]["future"] = {"type": "object"}
+    monkeypatch.setattr(extension.client, "discover", AsyncMock(return_value=fresh))
+    await extension.on_load()
+    app = web.Application()
+    app.add_routes(PromptServer.instance.routes)
+    async with TestClient(TestServer(app)) as session:
+        settings = await (await session.get("/protoface/settings")).json()
+        assert settings["unsupported_operations"] == []
+        response = await session.post("/protoface/catalog/refresh", json={})
+        assert response.status == 200
+        changes = await response.json()
+        assert changes["unsupported_operations"][0]["model_id"] == model["id"]
+        assert changes["unsupported_operations"][0]["operation"] == "image.edit"
+        extension.catalog = Catalog(config.state_dir)
+        settings = await (await session.get("/protoface/settings")).json()
+        assert settings["unsupported_operations"] == changes["unsupported_operations"]
+        assert settings["active_nodes"] == sum(not o.retired for o in extension.catalog.operations)
+        assert settings["cache_error"] is None
 
 
 async def test_actual_comfy_prompt_executes_and_preserves_cache_intent(config, journal, monkeypatch):

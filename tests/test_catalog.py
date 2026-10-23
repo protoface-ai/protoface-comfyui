@@ -33,19 +33,126 @@ def test_refresh_retains_saved_schema_ids(tmp_path):
     model["schema_fingerprints"]["image.edit"] = "a" * 64
     model["request_schemas"]["image.edit"]["properties"]["prompt"]["maxLength"] = 700
     changes = old.save_refresh(fresh)
-    assert changes == {"added_or_changed": 1, "retired_or_changed": 1, "restart_required": True}
+    assert changes == {
+        "added_or_changed": 1,
+        "retired_or_changed": 1,
+        "restart_required": True,
+        "unsupported_operations": [],
+    }
     new = Catalog(tmp_path)
     assert len(new.operations) == len(old.operations) + 1
     assert sum(o.retired for o in new.operations) == sum(o.retired for o in old.operations) + 1
     assert {o.node_id for o in old.operations} <= {o.node_id for o in new.operations}
 
 
-def test_unsupported_refresh_is_atomic(tmp_path):
+def test_unsupported_operation_is_skipped_without_losing_its_supported_sibling(tmp_path):
     catalog = Catalog(tmp_path)
-    bad = json.loads(BUNDLE.read_text())
-    editable_model(bad)["request_schemas"]["image.edit"]["properties"]["novel"] = {"type": "object"}
+    fresh = json.loads(BUNDLE.read_text())
+    model = editable_model(fresh)
+    assert "image.generate" in model["operations"]
+    model["request_schemas"]["image.edit"]["properties"]["novel"] = {"type": "object"}
+    changes = catalog.save_refresh(fresh)
+    assert len(changes["unsupported_operations"]) == 1
+    assert changes["unsupported_operations"][0]["model_id"] == model["id"]
+    assert changes["unsupported_operations"][0]["operation"] == "image.edit"
+    assert "reviewed adapter" in changes["unsupported_operations"][0]["reason"]
+    new = Catalog(tmp_path)
+    assert new.cache_error is None
+    assert new.unsupported_operations == changes["unsupported_operations"]
+    siblings = {o.name: o for o in new.operations if o.model["id"] == model["id"]}
+    assert not siblings["image.generate"].retired
+    assert siblings["image.edit"].retired
+    assert {o.node_id for o in catalog.operations} == {o.node_id for o in new.operations}
+    # Preserve the unsupported source contract, not a silently reduced parameter set.
+    assert json.loads((tmp_path / "catalog.json").read_text()) == fresh
     with pytest.raises(ValueError, match="reviewed adapter"):
-        catalog.save_refresh(bad)
+        parse_catalog(fresh)
+
+
+@pytest.mark.parametrize(
+    "unsupported",
+    [
+        {"type": "array", "maxItems": 1000, "items": {"type": "integer"}},
+        {"type": "array", "items": {"type": "string"}},
+        {
+            "type": "array",
+            "maxItems": 2,
+            "items": {"type": "array", "maxItems": 2, "items": {"type": "integer"}},
+        },
+        {"$ref": "#/$defs/future"},
+        {"type": "string", "x-protoface-media": {"modalities": ["model.3d"]}},
+    ],
+)
+def test_valid_future_controls_do_not_block_other_operations(tmp_path, unsupported):
+    catalog = Catalog(tmp_path)
+    fresh = json.loads(BUNDLE.read_text())
+    model = editable_model(fresh)
+    schema = model["request_schemas"]["image.edit"]
+    schema["$defs"] = {"future": {"type": "string"}}
+    schema["properties"]["future"] = unsupported
+    changes = catalog.save_refresh(fresh)
+    assert len(changes["unsupported_operations"]) == 1
+    new = Catalog(tmp_path)
+    assert len([o for o in new.operations if not o.retired]) == len(catalog.operations) - 1
+    assert new.unsupported_operations == changes["unsupported_operations"]
+
+
+def test_future_output_is_skipped_and_complete_source_survives_restart(tmp_path):
+    catalog = Catalog(tmp_path)
+    fresh = json.loads(BUNDLE.read_text())
+    model = editable_model(fresh)
+    model["operations"]["image.edit"]["outputs"][0]["modality"] = "embedding"
+    changes = catalog.save_refresh(fresh)
+    assert len(changes["unsupported_operations"]) == 1
+    assert "output" in changes["unsupported_operations"][0]["reason"]
+    assert Catalog(tmp_path).unsupported_operations == changes["unsupported_operations"]
+    assert json.loads((tmp_path / "catalog.json").read_text()) == fresh
+
+
+def test_refresh_with_no_supported_operations_keeps_cache_and_history(tmp_path):
+    catalog = Catalog(tmp_path)
+    original = json.loads(BUNDLE.read_text())
+    catalog.save_refresh(original)
+    saved = (tmp_path / "catalog.json").read_bytes()
+    histories = {p.name: p.read_bytes() for p in (tmp_path / "catalog-history").glob("*.json")}
+    model = copy.deepcopy(editable_model(original))
+    for schema in model["request_schemas"].values():
+        schema["properties"]["future"] = {"type": "object"}
+    with pytest.raises(ValueError, match="no supported model tasks"):
+        catalog.save_refresh({"models": [model]})
+    assert (tmp_path / "catalog.json").read_bytes() == saved
+    assert {p.name: p.read_bytes() for p in (tmp_path / "catalog-history").glob("*.json")} == histories
+
+
+def test_malformed_schema_is_not_hidden_by_a_prior_unsupported_operation(tmp_path):
+    catalog = Catalog(tmp_path)
+    original = json.loads(BUNDLE.read_text())
+    catalog.save_refresh(original)
+    saved = (tmp_path / "catalog.json").read_bytes()
+    fresh = copy.deepcopy(original)
+    model = editable_model(fresh)
+    model["request_schemas"]["image.edit"]["properties"]["future"] = {"type": "object"}
+    model["request_schemas"]["image.generate"]["type"] = "not-a-json-schema-type"
+    with pytest.raises(ValueError, match="invalid public request schema"):
+        catalog.save_refresh(fresh)
+    assert (tmp_path / "catalog.json").read_bytes() == saved
+
+
+@pytest.mark.parametrize("broken", ["fingerprint", "outputs", "constraints"])
+def test_incomplete_contract_is_rejected_even_if_controls_are_unsupported(tmp_path, broken):
+    catalog = Catalog(tmp_path)
+    fresh = json.loads(BUNDLE.read_text())
+    model = editable_model(fresh)
+    schema = model["request_schemas"]["image.edit"]
+    schema["properties"]["future"] = {"type": "object"}
+    if broken == "fingerprint":
+        del model["schema_fingerprints"]["image.edit"]
+    elif broken == "outputs":
+        model["operations"]["image.edit"]["outputs"] = []
+    else:
+        schema["x-protoface-constraints"] = "not-a-list"
+    with pytest.raises(ValueError):
+        catalog.save_refresh(fresh)
     assert not (tmp_path / "catalog.json").exists()
 
 
@@ -127,15 +234,18 @@ def test_availability_changes_preserve_current_node_identity(tmp_path):
     assert any(not o.model.get("available", True) for o in new.operations)
 
 
-def test_unknown_relationship_rules_are_rejected_before_refresh(tmp_path):
+def test_unknown_relationship_rules_skip_only_the_affected_operation(tmp_path):
     catalog = Catalog(tmp_path)
     fresh = json.loads(BUNDLE.read_text())
     editable_model(fresh)["request_schemas"]["image.edit"]["x-protoface-constraints"] = [
         {"kind": "novel_rule"}
     ]
+    changes = catalog.save_refresh(fresh)
+    assert len(changes["unsupported_operations"]) == 1
+    assert "unsupported constraint" in changes["unsupported_operations"][0]["reason"]
+    assert Catalog(tmp_path).unsupported_operations == changes["unsupported_operations"]
     with pytest.raises(ValueError, match="unsupported constraint"):
-        catalog.save_refresh(fresh)
-    assert not (tmp_path / "catalog.json").exists()
+        parse_catalog(fresh)
 
 
 def test_offline_schema_constraints(tmp_path):

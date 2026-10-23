@@ -39,6 +39,22 @@ app.registerExtension({
             key.style.width = "100%";
             const status = document.createElement("p");
             status.textContent = settings.cache_error || "Interactive keys are memory-only. Use PROTOFACE_API_KEY or PROTOFACE_API_KEY_FILE for persistence.";
+            const warnings = document.createElement("details");
+            const warningSummary = document.createElement("summary");
+            const warningList = document.createElement("ul");
+            warnings.append(warningSummary, warningList);
+            function showUnsupported(operations = []) {
+                warnings.hidden = operations.length === 0;
+                warningSummary.textContent = `${operations.length} unsupported model tasks`;
+                warningList.replaceChildren();
+                for (const operation of operations) {
+                    const item = document.createElement("li");
+                    // Catalog text must never become markup in the ComfyUI page.
+                    item.textContent = `${operation.model_id} · ${operation.operation}: ${operation.reason}`;
+                    warningList.append(item);
+                }
+            }
+            showUnsupported(settings.unsupported_operations);
             const save = document.createElement("button");
             save.textContent = "Set key";
             save.onclick = async () => {
@@ -54,14 +70,16 @@ app.registerExtension({
                     const result = await api.fetchApi("/protoface/catalog/refresh", { method: "POST", headers: {"Content-Type": "application/json"}, body: "{}" });
                     if (!result.ok) throw new Error(await result.text());
                     const change = await result.json();
-                    status.textContent = `${change.added_or_changed} added/changed tasks. Restart ComfyUI and reload this page to load the refreshed nodes.`;
+                    showUnsupported(change.unsupported_operations);
+                    const skipped = change.unsupported_operations?.length || 0;
+                    status.textContent = `${change.added_or_changed} added/changed tasks.${skipped ? ` ${skipped} unsupported tasks were skipped; expand the list below for details.` : ""} Restart ComfyUI and reload this page to load the refreshed nodes.`;
                 } catch (error) { status.textContent = error.message; }
                 finally { refresh.disabled = false; }
             };
             const close = document.createElement("button");
             close.textContent = "Close";
             close.onclick = () => dialog.close();
-            dialog.append(title, endpoint, note, key, status, save, refresh, close);
+            dialog.append(title, endpoint, note, key, status, warnings, save, refresh, close);
             dialog.addEventListener("close", () => dialog.remove());
             document.body.append(dialog);
             dialog.showModal();
