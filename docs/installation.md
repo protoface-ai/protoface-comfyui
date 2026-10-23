@@ -66,6 +66,7 @@ Preserve `PROTOFACE_STATE_DIR` (default `~/.cache/protoface-comfyui`) across upd
 | --- | --- |
 | No Protoface nodes | Confirm the entrypoint location, supported ComfyUI version, successful imports in the startup log and that there is only one copy installed. Restart and reload the browser. |
 | Cannot find a newly added model | Refresh the catalog, restart and reload. Unsupported schema additions require a code update. Registry search finds the package; Add Node finds installed nodes. |
+| Refresh reports unsupported tasks | Expand the unsupported-task list in Protoface settings for model names and reasons. Compatible tasks still load after restarting. Skipped tasks require an adapter update; their full schemas remain cached. A malformed response or one with no supported tasks keeps the previous catalog. |
 | Missing dependency | Install `requirements.txt` using ComfyUI's own Python interpreter. |
 | Authentication or credit error | Re-enter the account key after a restart; check that the account has enough credits. |
 | Job times out or the browser disconnects | Preserve the workflow scope and generation ID and requeue, or use Resume Run with the run ID. Do not increment the generation ID just to recover. |

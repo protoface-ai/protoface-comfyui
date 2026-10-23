@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 (2026-10-22)
+
+- Refresh compatible model tasks even when another task needs an unsupported control or media adapter.
+- Show skipped model tasks and their reasons in Protoface settings, including after restarting ComfyUI.
+- Preserve complete cached schemas and archived workflow definitions. Malformed catalogs and refreshes with no supported tasks still keep the previous catalog.
+
 ## 0.1.0 (2026-10-19)
 
 - Generate searchable model/task nodes from the public Protoface catalog, with native image, video and audio connections and typed nested controls.

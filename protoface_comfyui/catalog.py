@@ -18,6 +18,10 @@ BUNDLE = Path(__file__).parent / "data" / "catalog.json"
 ENVELOPE = {"operation", "metadata", "external_id"}
 
 
+class UnsupportedOperation(ValueError):
+    """A valid public contract that this extension cannot render completely."""
+
+
 def digest(value: Any) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
@@ -63,7 +67,7 @@ def field_type(schema: dict) -> str:
         )
     if schema.get("x-protoface-media"):
         return "array" if "items" in schema else "string"
-    raise ValueError("Schema needs one representable non-null type")
+    raise UnsupportedOperation("Schema needs one representable non-null type")
 
 
 def nullable(schema: dict) -> bool:
@@ -76,26 +80,33 @@ def nullable(schema: dict) -> bool:
 
 def check_field(schema: dict, path: str) -> None:
     if not isinstance(schema, dict):
-        raise ValueError(f"{path}: a representable input schema is required")
+        raise UnsupportedOperation(f"{path}: a representable input schema is required")
     schema = ui_schema(schema)
     if "$ref" in schema:
-        raise ValueError(f"{path}: unresolved reference; publish a resolved catalog schema")
+        raise UnsupportedOperation(f"{path}: unresolved reference; publish a resolved catalog schema")
     if "const" in schema:
         return
     kind = field_type(schema)
     if kind not in {"string", "integer", "number", "boolean", "array", "object"}:
-        raise ValueError(f"{path}: unsupported type {kind}")
+        raise UnsupportedOperation(f"{path}: unsupported type {kind}")
     if schema.get("x-protoface-media"):
-        modalities = schema["x-protoface-media"].get("modalities", [])
+        media = schema["x-protoface-media"]
+        if not isinstance(media, dict) or not isinstance(media.get("modalities"), list):
+            raise ValueError(f"{path}: media metadata requires a modalities list")
+        modalities = media["modalities"]
+        if any(not isinstance(m, str) or not m for m in modalities):
+            raise ValueError(f"{path}: media modalities must be non-empty strings")
         if not modalities or any(m not in {"image", "video", "audio"} for m in modalities):
-            raise ValueError(f"{path}: media adapter missing for {modalities}")
+            raise UnsupportedOperation(f"{path}: media adapter missing for {modalities}")
     if kind == "array":
         if "maxItems" not in schema or not 1 <= schema["maxItems"] <= 100:
-            raise ValueError(f"{path}: bounded array required by native ComfyUI Autogrow (1–100)")
+            raise UnsupportedOperation(f"{path}: bounded array required by native ComfyUI Autogrow (1–100)")
         check_field(schema.get("items", {}), f"{path}[]")
+        if field_type(schema["items"]) == "array":
+            raise UnsupportedOperation(f"{path}: nested list items require a reviewed adapter")
     if kind == "object":
         if not schema.get("properties"):
-            raise ValueError(f"{path}: open-ended objects require a reviewed adapter")
+            raise UnsupportedOperation(f"{path}: open-ended objects require a reviewed adapter")
         for name, child in schema["properties"].items():
             check_field(child, f"{path}.{name}")
 
@@ -130,13 +141,26 @@ class Operation:
         return self.model["operations"][self.name]["outputs"]
 
 
-def parse_catalog(value: dict, *, retired: bool = False) -> list[Operation]:
+@dataclass(frozen=True)
+class ParsedCatalog:
+    operations: list[Operation]
+    unsupported_operations: list[dict[str, str]]
+
+
+def inspect_catalog(value: dict, *, retired: bool = False) -> ParsedCatalog:
+    """Validate every contract, isolating only recognized renderer limitations.
+
+    Malformed metadata, missing contracts and invalid JSON Schemas still reject
+    the entire response. Full source schemas are retained in cached snapshots;
+    unsupported operations never become partially rendered, runnable nodes.
+    """
     if not isinstance(value, dict):
         raise ValueError("Catalog must be a JSON object")
     models = value.get("models", value.get("data"))
     if not isinstance(models, list) or not models:
         raise ValueError("Catalog must contain models and their public request_schemas")
     operations = []
+    unsupported = []
     ids = set()
     for model in models:
         if not isinstance(model, dict):
@@ -162,57 +186,97 @@ def parse_catalog(value: dict, *, retired: bool = False) -> list[Operation]:
         if set(schemas) != set(model["operations"]):
             raise ValueError(f"Incomplete schemas for {model['id']}")
         for name, schema in schemas.items():
+            if not isinstance(name, str) or not name.strip():
+                raise ValueError(f"{model['id']}: operation requires a non-empty name")
             if not isinstance(schema, dict) or not isinstance(schema.get("properties"), dict):
                 raise ValueError(f"{model['id']}/{name}: a request schema with properties is required")
             try:
                 Draft202012Validator.check_schema(schema)
             except SchemaError:
                 raise ValueError(f"{model['id']}/{name}: invalid public request schema") from None
-            for rule in schema.get("x-protoface-constraints", []):
-                if rule.get("kind") not in {"length_equals", "sum_equals", "sum_maximum"}:
-                    raise ValueError(f"{model['id']}/{name}: unsupported constraint; update the extension")
-            for field, prop in schema["properties"].items():
-                if field not in ENVELOPE:
-                    check_field(prop, f"{model['id']}/{name}/{field}")
-            outputs = model["operations"][name].get("outputs", [])
-            if not outputs or any(
-                o.get("modality") not in {"image", "video", "audio", "text", "data", "model.3d"}
-                for o in outputs
+            rules = schema.get("x-protoface-constraints", [])
+            if not isinstance(rules, list) or any(
+                not isinstance(rule, dict) or not isinstance(rule.get("kind"), str) for rule in rules
             ):
-                raise ValueError(f"Unrepresentable output for {model['id']}/{name}")
+                raise ValueError(f"{model['id']}/{name}: invalid relationship constraints")
+            contract = model["operations"][name]
+            if not isinstance(contract, dict):
+                raise ValueError(f"{model['id']}/{name}: operation metadata must be an object")
+            outputs = contract.get("outputs", [])
+            if (
+                not isinstance(outputs, list)
+                or not outputs
+                or any(
+                    not isinstance(o, dict) or not isinstance(o.get("modality"), str) or not o["modality"]
+                    for o in outputs
+                )
+            ):
+                raise ValueError(f"{model['id']}/{name}: output descriptors are required")
             fingerprint = model.get("schema_fingerprints", {}).get(name)
             if not isinstance(fingerprint, str) or not re.fullmatch(r"[0-9a-f]{64}", fingerprint):
                 raise ValueError(f"Missing public schema fingerprint for {model['id']}/{name}")
+            try:
+                for rule in rules:
+                    if rule["kind"] not in {"length_equals", "sum_equals", "sum_maximum"}:
+                        raise UnsupportedOperation(
+                            f"{model['id']}/{name}: unsupported constraint; update the extension"
+                        )
+                for field, prop in schema["properties"].items():
+                    if field not in ENVELOPE:
+                        check_field(prop, f"{model['id']}/{name}/{field}")
+                if any(
+                    o["modality"] not in {"image", "video", "audio", "text", "data", "model.3d"}
+                    for o in outputs
+                ):
+                    raise UnsupportedOperation(f"Unrepresentable output for {model['id']}/{name}")
+            except UnsupportedOperation as error:
+                unsupported.append({"model_id": model["id"], "operation": name, "reason": str(error)})
+                continue
             operations.append(Operation(model, name, schema, fingerprint, retired))
-    return operations
+    return ParsedCatalog(operations, unsupported)
+
+
+def parse_catalog(value: dict, *, retired: bool = False) -> list[Operation]:
+    """Strict validation for bundled catalogs, release checks and offline tooling."""
+    result = inspect_catalog(value, retired=retired)
+    if result.unsupported_operations:
+        raise UnsupportedOperation(result.unsupported_operations[0]["reason"])
+    return result.operations
+
+
+def usable_catalog(value: dict) -> ParsedCatalog:
+    result = inspect_catalog(value)
+    if not result.operations:
+        raise ValueError("Catalog contains no supported model tasks; keeping the previous catalog.")
+    return result
 
 
 class Catalog:
     def __init__(self, state_dir: Path):
         self.state_dir = state_dir
         bundled = json.loads(BUNDLE.read_text())
-        snapshots = [bundled]
+        snapshots = [(bundled, usable_catalog(bundled))]
         current = state_dir / "catalog.json"
         if current.exists():
             try:
                 cached = json.loads(current.read_text())
-                parse_catalog(cached)
-                snapshots.append(cached)
+                snapshots.append((cached, usable_catalog(cached)))
             except (ValueError, KeyError, OSError):
                 # A broken cache must not prevent offline startup; status exposes this error.
                 self.cache_error = "Cached catalog invalid. Using bundled catalog; refresh to repair."
         self.cache_error = getattr(self, "cache_error", None)
-        active = parse_catalog(snapshots[-1])
+        active = snapshots[-1][1].operations
+        self.unsupported_operations = snapshots[-1][1].unsupported_operations
         active_ids = {op.node_id for op in active}
         archived = {}
-        for value in snapshots[:-1]:
-            for op in parse_catalog(value, retired=True):
+        for value, _ in snapshots[:-1]:
+            for op in inspect_catalog(value, retired=True).operations:
                 if op.node_id not in active_ids:
                     archived[op.node_id] = op
         histories = [BUNDLE.parent / "history", state_dir / "catalog-history"]
         for path in sorted(path for directory in histories for path in directory.glob("*.json")):
             try:
-                for op in parse_catalog(json.loads(path.read_text()), retired=True):
+                for op in inspect_catalog(json.loads(path.read_text()), retired=True).operations:
                     if op.node_id not in active_ids:
                         archived[op.node_id] = op
             except (ValueError, KeyError, OSError):
@@ -220,24 +284,25 @@ class Catalog:
                     "Some catalog history is invalid; repair it before using affected workflows."
                 )
         self.operations = active + list(archived.values())
-        self.revision = snapshots[-1].get("revision", digest(snapshots[-1]))
+        self.revision = snapshots[-1][0].get("revision", digest(snapshots[-1][0]))
 
     def save_refresh(self, value: dict) -> dict:
-        fresh = parse_catalog(value)  # Validate entire refresh before any mutation.
+        fresh = usable_catalog(value)  # Validate entire response before any mutation.
         current = self.state_dir / "catalog.json"
         try:
             previous = json.loads(current.read_text())
-            parse_catalog(previous)
+            usable_catalog(previous)
         except (OSError, ValueError, KeyError):
             previous = json.loads(BUNDLE.read_text())
         atomic_json(self.state_dir / "catalog-history" / f"{digest(previous)}.json", previous)
         atomic_json(current, value)
         old = {o.node_id for o in self.operations if not o.retired}
-        new = {o.node_id for o in fresh}
+        new = {o.node_id for o in fresh.operations}
         return {
             "added_or_changed": len(new - old),
             "retired_or_changed": len(old - new),
             "restart_required": True,
+            "unsupported_operations": fresh.unsupported_operations,
         }
 
 
