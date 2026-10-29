@@ -38,7 +38,7 @@ jobs:
       - run: ruff check . && ruff format --check .
       - run: python scripts/sync_catalog.py protoface_comfyui/data/catalog.json --check
       - run: python scripts/release.py check
-      - run: pytest tests/test_catalog.py tests/test_client.py tests/test_release.py
+      - run: pytest tests/test_catalog.py tests/test_client.py tests/test_config.py tests/test_journal.py tests/test_release.py
       - run: python -m build
       - name: Check built archives for private state and credentials
         run: python -c "import pathlib,subprocess,sys; subprocess.run([sys.executable,'scripts/check_public_content.py',*[arg for p in pathlib.Path('dist').iterdir() if p.is_file() for arg in ('--archive',str(p))]],check=True)"
