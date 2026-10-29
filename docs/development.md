@@ -66,7 +66,7 @@ The settings dialog shows the API endpoint. Confirm it is `https://api.protoface
 
 ## Release preparation
 
-See [the release guide](releasing.md) for the manual build/draft/Registry workflow, publisher configuration, version checks and first-release checklist. Registry publication has not been performed. Compatible catalog updates can be fetched by users without a package update; new native adapters need a code release. Registry/Manager discovery is package-level before installation, while generated node-name search is available after installation. A GitHub repository alone does not populate everyone's Add Node search or the built-in template library.
+See [the release guide](releasing.md) for the manual build/draft/Registry workflow, publisher configuration, version checks and first-release checklist. Version **0.1.2** is approved and available through [Comfy Registry](https://registry.comfy.org/nodes/protoface-nodes) and Manager. Package approval is separate from Registry extraction of individual node metadata. Compatible catalog updates can be fetched by users without a package update; new native adapters need a code release. Registry/Manager discovery is package-level before installation, while generated node-name search is available after installation. A GitHub repository alone does not populate everyone's Add Node search or the built-in template library.
 
 ## Tested baseline and sources
 
