@@ -4,7 +4,13 @@
 
 Requires ComfyUI **0.41.0 or newer** and Python **3.10 or newer**. The extension performs inference through Protoface; you do not download model weights or need a local inference GPU. ComfyUI still supplies its native media types and tensor libraries. PyAV and Pillow handle native media connections and previews.
 
-The beta **0.1.0** release is published at [Protoface on Comfy Registry](https://registry.comfy.org/nodes/protoface-nodes), under publisher **protoface** and package ID **protoface-nodes**. In ComfyUI-Manager, open **Extensions** (or **Manager**), search **Protoface**, install **protoface-nodes**, restart ComfyUI and reload the browser. Registry version processing and Manager's separate search index can lag after publication. If the package is not listed yet, use the tagged Git installation below or the [0.1.0 Registry source ZIP](https://cdn.comfy.org/protoface/protoface-nodes/0.1.0/node.zip).
+The latest approved release is **0.1.2**, available at [Protoface on Comfy Registry](https://registry.comfy.org/nodes/protoface-nodes), under publisher **protoface** and package ID **protoface-nodes**.
+
+### ComfyUI Manager (recommended)
+
+Open **Extensions** (or **Manager**), search **Protoface**, install **protoface-nodes**, then restart ComfyUI and reload the browser. Manager installs the latest approved Registry version. If the package does not appear, refresh Manager's catalog.
+
+For a manual installation, use the tagged Git instructions below or unpack the [0.1.2 Registry source ZIP](https://cdn.comfy.org/protoface/protoface-nodes/0.1.2/node.zip).
 
 There is one installable extension; its model/task nodes become searchable after installation. A wheel named `protoface_nodes-*.whl` contains only the shared Python adapter and is not an installable ComfyUI custom-node package.
 
@@ -13,7 +19,7 @@ There is one installable extension; its model/task nodes become searchable after
 From the ComfyUI directory, with its virtual environment activated:
 
 ```sh
-git clone --branch v0.1.0 --depth 1 https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
+git clone --branch v0.1.2 --depth 1 https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
 python -m pip install -r custom_nodes/protoface/requirements.txt
 ```
 

@@ -13,7 +13,7 @@ There is no publication on a normal push, merge, version-file edit or scheduled 
 
 ## One-time repository setup
 
-1. Merge the reviewed integration into the existing default branch, **master**. Replace the README's beta clone command with the stable installation path when the first release is ready.
+1. Merge the reviewed integration into the existing default branch, **master**. Keep Manager as the recommended installation path; manual installation commands should point to an approved release tag.
 2. Require Checks before merging to master. Restrict writes and release tag creation to maintainers. Give Actions read permissions by default; the draft-release job alone requests `contents: write`.
 3. Create the immutable official publisher ID at [Comfy Registry](https://registry.comfy.org). Confirm the proposed package ID **protoface-nodes** is available. The package ID is distinct from the GitHub repository name and the generated model/task node IDs.
 4. The registered publisher ID **protoface** is committed in `[tool.comfy].PublisherId` in `pyproject.toml`. Set repository variable **COMFY_PUBLISHER_ID** to exactly the same value. If the proposed package ID is unavailable, update the package metadata, release guard, artifact names and instructions together before the first publication.
@@ -25,7 +25,7 @@ No inference key is needed for regular CI or release builds. The catalog candida
 
 ## Prepare a version
 
-Update `pyproject.toml` and `protoface_comfyui/__init__.py` to the same three-part semantic version. Add a non-empty entry in `CHANGELOG.md`, replace its unreleased marker with the release date, and describe changes to artist controls or saved workflow behavior. The release guard also checks that `requirements.txt` matches project dependencies.
+Update `pyproject.toml` and `protoface_comfyui/__init__.py` to the same three-part semantic version. Add a non-empty entry in `CHANGELOG.md`, replace its unreleased marker with the release date, and describe changes to artist controls or saved workflow behavior. After Registry approval, update the release version, manual Git tag, and Registry ZIP links in `README.md` and `docs/installation.md`. The release guard also checks that `requirements.txt` matches project dependencies.
 
 Registry publication takes the listing description from `[project].description` in the tagged `pyproject.toml`. Keep that description and the README introduction focused on supported media tasks and recognizable model names. A source edit changes the metadata sent with the next release; it does not edit an already published archive or listing by itself.
 

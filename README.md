@@ -4,21 +4,21 @@ Official Protoface API nodes for ComfyUI with automatic full-catalog coverage. G
 
 One extension provides searchable model/task nodes with native media connections and controls: currently **44 models and 95 tasks**. Browse the catalog by model name or task, then connect it to your ComfyUI workflow.
 
-**Beta 0.1.0:** [Protoface on Comfy Registry](https://registry.comfy.org/nodes/protoface-nodes), package **protoface-nodes**, publisher **protoface**. Representative image, video, audio and reference workflows have been tested against the production API. Mock coverage includes every bundled task; it does not establish every model's production quality or latency.
+**Latest approved release: 0.1.2.** [Protoface on Comfy Registry](https://registry.comfy.org/nodes/protoface-nodes), package **protoface-nodes**, publisher **protoface**. Representative image, video, audio and reference workflows have been tested against the production API. Mock coverage includes every bundled task; it does not establish every model's production quality or latency.
 
 ## Install
 
 Requires **ComfyUI 0.41.0 or newer** and Python 3.10 or newer. ComfyUI Desktop and local/self-managed hosted installations can load this custom-node package. Comfy Cloud does not permit arbitrary independent custom-node installation. This extension bills your Protoface account directly; it is independent of Comfy Partner Nodes and Comfy credits.
 
-With **ComfyUI-Manager**, open **Extensions** (or **Manager**), search **Protoface**, install **protoface-nodes**, then restart ComfyUI and reload the browser. Registry version processing and Manager's search index can lag after publication; if the package is not listed yet, use the tagged Git installation below. After installation, continue with API-key setup in step 4.
+With **ComfyUI-Manager**, open **Extensions** (or **Manager**), search **Protoface**, install **protoface-nodes**, then restart ComfyUI and reload the browser. If Manager does not show Protoface, refresh its catalog. You can also use the tagged Git or ZIP installation below. After installation, continue with API-key setup in step 4.
 
-For a manual installation of **0.1.0**:
+For a manual installation of **0.1.2**:
 
 1. Clone the release tag from the ComfyUI directory:
    ```sh
-   git clone --branch v0.1.0 --depth 1 https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
+   git clone --branch v0.1.2 --depth 1 https://github.com/protoface-ai/protoface-comfyui.git custom_nodes/protoface
    ```
-   Alternatively unpack the [0.1.0 Registry source ZIP](https://cdn.comfy.org/protoface/protoface-nodes/0.1.0/node.zip) into `ComfyUI/custom_nodes/protoface`.
+   Alternatively unpack the [0.1.2 Registry source ZIP](https://cdn.comfy.org/protoface/protoface-nodes/0.1.2/node.zip) into `ComfyUI/custom_nodes/protoface`.
 2. With **ComfyUI's Python interpreter**, install `requirements.txt`:
    ```sh
    python -m pip install -r custom_nodes/protoface/requirements.txt
@@ -67,7 +67,7 @@ The bundled catalog loads offline without an API key or startup network request.
 
 Nodes keep an immutable schema identity. Old definitions remain loadable from bundled/local history and are marked archived after a schema change or retirement. Archived definitions refuse new submissions; select the current model node or use Resume Run for previous jobs. Existing results are never automatically regenerated because a package version changed.
 
-New schema constructs, media modalities, or provider-specific behavior can require an extension update. Unsupported catalog refreshes are rejected before replacing the working snapshot. Publishing a model-list endpoint alone does not prove a future model is usable in ComfyUI.
+New schema constructs, media modalities, or provider-specific behavior can require an extension update. Compatible tasks still load when other tasks need an unsupported control or media adapter; Protoface settings lists the skipped tasks and their reasons. A malformed catalog, or one with no supported tasks, keeps the working snapshot. Publishing a model-list endpoint alone does not prove a future model is usable in ComfyUI.
 
 See [installation, updates and troubleshooting](docs/installation.md), [release and Registry setup](docs/releasing.md), [development checks](docs/development.md), [architecture](docs/architecture.md), and [example workflows](example_workflows/README.md).
 
