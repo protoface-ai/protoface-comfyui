@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import math
-import os
 from dataclasses import dataclass
+from os import environ
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -22,12 +22,12 @@ class Config:
 
     @classmethod
     def from_env(cls) -> Config:
-        state = Path(os.environ.get("PROTOFACE_STATE_DIR", "~/.cache/protoface-comfyui")).expanduser()
-        key = os.environ.get("PROTOFACE_API_KEY", "")
-        keyfile = os.environ.get("PROTOFACE_API_KEY_FILE")
+        state = Path(environ.get("PROTOFACE_STATE_DIR", "~/.cache/protoface-comfyui")).expanduser()
+        key = environ.get("PROTOFACE_API_KEY", "")
+        keyfile = environ.get("PROTOFACE_API_KEY_FILE")
         if not key and keyfile:
             key = Path(keyfile).expanduser().read_text().strip()
-        base = os.environ.get("PROTOFACE_BASE_URL", "https://api.protoface.com").rstrip("/")
+        base = environ.get("PROTOFACE_BASE_URL", "https://api.protoface.com").rstrip("/")
         url = urlsplit(base)
         if (
             url.scheme not in {"https", "http"}
@@ -40,9 +40,9 @@ class Config:
             raise ValueError("Invalid operator PROTOFACE_BASE_URL")
         if url.scheme == "http" and url.hostname not in {"localhost", "127.0.0.1", "::1"}:
             raise ValueError("Protoface credentials require HTTPS outside localhost")
-        timeout = float(os.environ.get("PROTOFACE_JOB_TIMEOUT_SECONDS", "7200"))
-        poll = float(os.environ.get("PROTOFACE_POLL_INTERVAL_SECONDS", "2"))
-        download_limit = int(os.environ.get("PROTOFACE_MAX_DOWNLOAD_BYTES", "2000000000"))
+        timeout = float(environ.get("PROTOFACE_JOB_TIMEOUT_SECONDS", "7200"))
+        poll = float(environ.get("PROTOFACE_POLL_INTERVAL_SECONDS", "2"))
+        download_limit = int(environ.get("PROTOFACE_MAX_DOWNLOAD_BYTES", "2000000000"))
         if (
             not math.isfinite(timeout)
             or not math.isfinite(poll)
@@ -55,7 +55,7 @@ class Config:
             state,
             base,
             key,
-            max(1, int(os.environ.get("PROTOFACE_CONCURRENCY", "2"))),
+            max(1, int(environ.get("PROTOFACE_CONCURRENCY", "2"))),
             timeout,
             poll,
             download_limit,

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 (2026-10-28)
+
+- Refactor configuration loading and local job-journal queries, preserving existing settings, saved jobs, and request recovery.
+
 ## 0.1.1 (2026-10-22)
 
 - Refresh compatible model tasks even when another task needs an unsupported control or media adapter.
