@@ -1,6 +1,6 @@
 # Protoface for ComfyUI
 
-Official Protoface API nodes for ComfyUI with automatic full-catalog coverage. Generate video with **MiniMax H3, LTX 2.5 Fast, Seedance, Kling, Veo, Runway and Luma**. Generate and edit images with **FLUX, Nano Banana, GPT Image and Qwen**, and create **music, speech and 3D assets**.
+Official Protoface API nodes for ComfyUI with automatic full-catalog coverage. Generate video with **MiniMax H3, LTX 2.5 Fast, Seedance 2.5, Kling, Veo, Runway and Luma**. Generate and edit images with **FLUX, Nano Banana, GPT Image and Qwen**, and create **music, speech and 3D assets**. Use the cheapest Seedance 2.5 API directly in ComfyUI.
 
 One extension provides searchable model/task nodes with native media connections and controls: currently **44 models and 95 tasks**. Browse the catalog by model name or task, then connect it to your ComfyUI workflow.
 
